@@ -1,0 +1,129 @@
+version: '3'
+
+x-common-variables: &common-variables
+  MYSQL_DATABASE: books
+  MYSQL_USER: MYSQL_USER
+  MYSQL_PASSWORD: MYSQL_PASSWORD
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+        - fr2-network
+  mservice:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./microservices-project
+      target: development
+    env_file: .env
+    container_name: mservice
+    image: mservice-dev
+    depends_on:
+      - redis
+      - mongodb
+    command: npm run start:dev
+    networks:
+      - fr2-network
+    ports:
+      - 8079:8079
+  graphql-api:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./nest-graphql
+      target: development
+    env_file: .env
+    container_name: graphql-api
+    image: graphql-api-dev
+    depends_on:
+      - mongodb
+    #  - redis
+    #environment:
+      #<<: *common-variables
+    volumes:
+        #- api-dev2:/usr/src/api
+        - graphql-api-dev-modules:/usr/src/api/node_modules
+    command: npm run start:dev
+    networks:
+      - fr2-network
+    ports:
+      - 3333:3333
+  auth-api:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    build:
+      dockerfile: ./Dockerfile
+      context: ./auth-api
+      target: production
+    #env_file: .env
+    container_name: auth-api
+    image: auth-api-dev
+    depends_on:
+      - mysql
+      - redis
+    #environment:
+      #<<: *common-variables
+    volumes:
+    #    - api-dev:/usr/src/api
+        - auth-api-dev-modules:/usr/src/api/node_modules
+    command: npm run start:dev
+    networks:
+      - fr2-network
+    ports:
+      - 3000:3000
+  redis:
+    container_name: redis
+    image: redis
+    ports:
+      - 6379:6379
+    networks:
+      - fr2-network
+    volumes:
+      - redis:/data
+  mysql:
+    image: mysql/mysql-server
+    container_name: mysql
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: change-me
+    volumes:     
+      #- dbdata-dev:/var/lib/mysql
+      - ./auth-db/init-files/dev:/docker-entrypoint-initdb.d
+    networks:
+      - fr2-network
+    ports:
+      - 3306:3306
+
+  mongodb:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    #volumes:
+    #  - type: bind
+    #    source: ./data
+    #    target: /data/db
+    networks:
+      - fr2-network
+    ports:
+      - 27017:27017
+
+networks:
+  fr2-network:
+    driver: bridge
+volumes:
+  dbdata-dev:
+  auth-api-dev:
+  auth-api-dev-modules:
+  graphql-api-dev:
+  graphql-api-dev-modules:
+  redis:
