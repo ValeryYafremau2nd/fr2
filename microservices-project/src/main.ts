@@ -7,7 +7,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [`amqp://guest:guest@host.docker.internal:5672`],
-      queue: 'test',
+      queue: 'league_update',
       queueOptions: {
         durable: true,
       },

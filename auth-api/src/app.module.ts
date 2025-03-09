@@ -8,36 +8,38 @@ import * as redisStore from 'cache-manager-redis-store';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TasksService } from './srvices/taskService';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ envFilePath: `../.env` }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: 'host.docker.internal',
       port: 3306,
-      username: 'user',
-      password: 'password',
-      database: 'oauth',
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
       autoLoadEntities: true,
       insecureAuth: true,
       synchronize: true,
       //entities: [__dirname + '/../**/*.entity.{js,ts}']
     }),
-    CacheModule.register({
+    /*CacheModule.register({
       isGlobal: true,
       store: redisStore,
       host: 'redis',
       port: 6379,
-    }),
+    }),*/
     AuthModule,
     ClientsModule.register([
       {
-        name: 'TEST_SERVICE',
+        name: 'LEAGUE_SERVICE',
         transport: Transport.RMQ,
         options: {
           urls: ['amqp://host.docker.internal:5672'],
-          queue: 'test',
+          queue: 'league_update',
           queueOptions: {
             durable: true
           },

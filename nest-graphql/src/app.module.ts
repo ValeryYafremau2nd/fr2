@@ -9,9 +9,11 @@ import { LeagueSchema, LeagueSchemaName } from './schemas/league.schema';
 import { FavoriteModule } from './favorite/favorite.module';
 import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ envFilePath: `../.env` }),
     FavoriteModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     AuthModule,
@@ -25,7 +27,7 @@ import { AuthModule } from './auth/auth.module';
       plugins: [],
     }),
     MongooseModule.forRoot(
-      'mongodb://user:pass@host.docker.internal:27017/mongoose_journey?authSource=admin',
+      `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@host.docker.internal:27017/mongoose_journey?authSource=admin`,
       {
         dbName: 'foot-reminder',
       },

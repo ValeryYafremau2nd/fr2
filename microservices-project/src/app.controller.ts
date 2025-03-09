@@ -12,19 +12,17 @@ const request = promisify(require('request'));
 @Controller()
 export class AppController {
   private readonly logger = new Logger('ms');
-  @MessagePattern('test')
+  @MessagePattern('league_update')
   accumulate(@Payload() data: any, @Ctx() context: RmqContext): number {
     this.logger.debug('mservice' + data);
-    console.log('mservice' + data);
 
-    let url =
-      'mongodb://user:pass@host.docker.internal:27017/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false';
+    let url = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@host.docker.internal:27017/?authSource=admin&readPreference=primary&ssl=false`;
     let client = new MongoClient(url);
 
     const options = {
       method: 'GET',
       headers: {
-        'X-Auth-Token': 'abd08f762e224d1a8d0b071a3c4d0c7d',
+        'X-Auth-Token': process.env.TOKEN,
       },
     };
 
@@ -105,7 +103,6 @@ export class AppController {
       await teams.insertMany(mappedTeams);
       console.log(`league ${leagueId} added`);
     };
-
 
     data && client.connect().then(() => leagueInfo(data));
 

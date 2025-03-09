@@ -1,10 +1,5 @@
 version: '3'
 
-x-common-variables: &common-variables
-  MYSQL_DATABASE: books
-  MYSQL_USER: MYSQL_USER
-  MYSQL_PASSWORD: MYSQL_PASSWORD
-
 services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -35,6 +30,7 @@ services:
       - fr2-network
     ports:
       - 8079:8079
+
   graphql-api:
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -58,6 +54,7 @@ services:
       - fr2-network
     ports:
       - 3333:3333
+
   auth-api:
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -81,8 +78,9 @@ services:
       - fr2-network
     ports:
       - 3000:3000
-  redis:
-    container_name: redis
+
+  redis-fr2:
+    container_name: redis-fr2
     image: public.ecr.aws/docker/library/redis:alpine3.20
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -92,6 +90,7 @@ services:
       - fr2-network
     volumes:
       - redis:/data
+
   mysql:
     image: public.ecr.aws/lts/mysql:8.0-20.04_beta
     extra_hosts:
@@ -109,11 +108,11 @@ services:
     ports:
       - 3306:3306
 
-  mongodb:
+  mongodb-fr2:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     image: public.ecr.aws/sxm-data-services/mongo:4.4.6
-    container_name: mongodb
+    container_name: mongodb-fr2
     restart: unless-stopped
     environment:
       - MONGO_INITDB_ROOT_USERNAME=user
@@ -130,6 +129,7 @@ services:
 networks:
   fr2-network:
     driver: bridge
+
 volumes:
   dbdata-dev:
   auth-api-dev:

@@ -1,11 +1,7 @@
 version: '3'
 
-x-common-variables: &common-variables
-  MYSQL_DATABASE: books
-  MYSQL_USER: MYSQL_USER
-  MYSQL_PASSWORD: MYSQL_PASSWORD
-
 services:
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: 'rabbitmq'
@@ -17,6 +13,7 @@ services:
         - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
     networks:
         - fr2-network
+
   mservice:
     build:
       dockerfile: ./Dockerfile
@@ -26,13 +23,14 @@ services:
     container_name: mservice
     image: mservice-dev
     depends_on:
-      - redis
-      - mongodb
+      - redis-fr2
+      - mongodb-fr2
     command: npm run start:dev
     networks:
       - fr2-network
     ports:
       - 8079:8079
+
   graphql-api:
     build:
       dockerfile: ./Dockerfile
@@ -42,8 +40,8 @@ services:
     container_name: graphql-api
     image: graphql-api-dev
     depends_on:
-      - mongodb
-    #  - redis
+      - mongodb-fr2
+    #  - redis-fr2
     #environment:
       #<<: *common-variables
     volumes:
@@ -54,6 +52,7 @@ services:
       - fr2-network
     ports:
       - 3333:3333
+
   auth-api:
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -66,7 +65,7 @@ services:
     image: auth-api-dev
     depends_on:
       - mysql
-      - redis
+      - redis-fr2
     #environment:
       #<<: *common-variables
     volumes:
@@ -77,15 +76,17 @@ services:
       - fr2-network
     ports:
       - 3000:3000
-  redis:
-    container_name: redis
+
+  redis-fr2:
+    container_name: redis-fr2
     image: redis
     ports:
       - 6379:6379
     networks:
       - fr2-network
     volumes:
-      - redis:/data
+      - redis-fr2:/data
+
   mysql:
     image: mysql/mysql-server
     container_name: mysql
@@ -101,17 +102,17 @@ services:
     ports:
       - 3306:3306
 
-  mongodb:
+  mongodb-fr2:
     image: mongodb/mongodb-community-server:6.0-ubi8
-    container_name: mongodb
+    container_name: mongodb-fr2
     restart: unless-stopped
     environment:
       - MONGO_INITDB_ROOT_USERNAME=user
       - MONGO_INITDB_ROOT_PASSWORD=pass
-    #volumes:
-    #  - type: bind
-    #    source: ./data
-    #    target: /data/db
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data/db
     networks:
       - fr2-network
     ports:
@@ -120,10 +121,11 @@ services:
 networks:
   fr2-network:
     driver: bridge
+
 volumes:
   dbdata-dev:
   auth-api-dev:
   auth-api-dev-modules:
   graphql-api-dev:
   graphql-api-dev-modules:
-  redis:
+  redis-fr2:
